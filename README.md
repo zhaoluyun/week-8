@@ -1,39 +1,34 @@
-# Week 6
+# Week 8
 
 *As always: make a copy of this repository to commit changes to*
 
 ## Class Outline
 
-### Week 5 Review & Introduction
-- Homework/lab discussion
-  - Asynchronous behavior (recap)
+### Introduction
+- Hackathon retro (BlockIQ)
+- turf.js
+  - Spatial joins
+  - Measurement extraction
+  - Aggregation and analysis
+  - Other stuff (classification, interpolation, utility methods)
+- Leaflet draw
+  - plugin
 
-### Advanced Cartography
+### Interaction and analysis
 
-##### Section 1: Reading an API
-- `jQuery` event
-  - `$.change`
-  - `$.keypress`, `$.keyup`, etc.
-- `L.divIcon` marker
-  - styling with classes
-- `L.featureGroup`
-- `L.map` methods
-  - `map.panTo(<coordinates>)`
-  - `map.fitBounds(<boundsObject>)`
-- 'options' objects
+##### Section 1: Turf.js
+- [Spatial joins](./spatial-joins.md) // TODO: add spatial-joins markdown file
+- Bring datasets together
+- Joins
+- Aggregation
+- Measurements
+- [Lab 1](lab/lab1)
 
-##### Section 2: GeoJson
-- Plotting geojson
-- Styling individual geojson elements
-- Making a legend in HTML
-- [Lab](lab/)
+##### Section 3: Leaflet Draw
+- Plugin introduction
+- [Lab 2](lab/lab2
 
-##### Section 3: Geospatial Data
-- Where to find it
-- Formatting and converting it
-- Using github as a backend (storage)
-
-## Homework Assignment (Due: Sunday, February 28)
+## Homework Assignment (Due: Sunday, March 27)
 
 - Complete [Labs](lab)
 - Complete [Assignment](assignment)
