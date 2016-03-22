@@ -34,17 +34,22 @@ $.ajax('https://raw.githubusercontent.com/CPLN690-MUSA610/datasets/master/geojso
   // Fixing an AWFUL bug caused by BAD data: Features *NEED* to have geometries...
   crimeData.features = _.filter(crimeData.features, function(f) { return f.geometry; });
 
+  // The data includes some strange outliers - let's limit it to the area with lots of data
+  // The spatial filter produced here was produced on geojson.io (which uses leaflet draw!)
+  var spatialFilter = {"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-75.22218704223633,39.885108787598114],[-75.22218704223633,39.9380402756277],[-75.13412475585938,39.9380402756277],[-75.13412475585938,39.885108787598114],[-75.22218704223633,39.885108787598114]]]}}]};
+  crimeData = turf.within(crimeData, spatialFilter);
+
   // Fit map to data bounds
   var mapBoundary = L.geoJson(turf.envelope(crimeData)).getBounds();
   map.fitBounds(mapBoundary);
 
-  // We'll place a hexagonal grid over the entire map area (hexagons are better than
+  // We'll place a hexagonal grid over the entire mapped area (hexagons are better than
   // squares because square east/west and north/south distance is less than diagonal distance
   var turfFriendlyBoundary = [mapBoundary.getWest(), mapBoundary.getSouth(), mapBoundary.getEast(), mapBoundary.getNorth()];
-  hexGrid = turf.hexGrid(turfFriendlyBoundary, 0.25, 'miles');
+  hexGrid = turf.hexGrid(turfFriendlyBoundary, 0.15, 'miles');
 
   // Update the HTML DOM to reflect all the unique crime types
-  // First, get the unique crime text
+  // Map over crimeData features for 'properties.text_general_code' and get the unique results
   var uniqueCrimeTypes = _.unique(_.map(crimeData.features, function(f) { return f.properties.text_general_code; }));
 
   // For each unique text, create a  checkbox
@@ -60,9 +65,12 @@ $.ajax('https://raw.githubusercontent.com/CPLN690-MUSA610/datasets/master/geojso
     }).get();
 
     // Let's "zip" checkbox values and checkbox text up together so that we can see values next to text
+    // Zipping takes two arrays (e.g. ['a', 'b', 'c'] and [1, 2, 3]) and produces an output
+    // (for this example, that output would be [['a', 1], ['b', 2], ['c', 3]])
+    // This is a nifty trick for functionally manipulating data
     var zippedCrimeTypes = _.zip(checkboxValues, uniqueCrimeTypes);
 
-    // Our data, at this point, looks like this: [[true, 'aCrimeType], [false, 'unwantedCrimeType']]
+    // Our data, at this point, looks something like this: [[true, 'aCrimeType], [false, 'unwantedCrimeType']]
     // Now, we want to return all and only crime types whose "zipped" values are true
     // This involves filtering for true values at index 0 and getting the text at index 1
     crimeFilters = _.chain(zippedCrimeTypes)
@@ -71,19 +79,23 @@ $.ajax('https://raw.githubusercontent.com/CPLN690-MUSA610/datasets/master/geojso
       .value();
 
     // Carry out filter
-    var filteredCrimeData = _.clone(crimeData);
+    var filteredCrimeData = _.clone(crimeData); // Cloning here so we don't overwrite data on the original object
     filteredCrimeData.features = _.filter(filteredCrimeData.features, function(f) {
       return _.contains(crimeFilters, f.properties.text_general_code);
     });
 
+    // Remove any outdated data
     if (mappedGrid) { map.removeLayer(mappedGrid); }
     mappedGrid = L.geoJson(turf.count(hexGrid, filteredCrimeData, 'captured'), {
       style: function(feature) {
         return {
           stroke: false,
           fillColor: '#ff0000',
-          fillOpacity: (feature.properties.captured * 0.1)
+          fillOpacity: (feature.properties.captured * 0.05)
         };
+      },
+      onEachFeature: function(feature, layer) {
+        layer.bindPopup("Crimes reported: " + feature.properties.captured);
       }
     }).addTo(map);
   });
