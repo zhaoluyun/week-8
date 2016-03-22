@@ -17,7 +17,6 @@
 ### Interaction and analysis
 
 ##### Section 1: Turf.js
-- [Spatial joins](./spatial-joins.md) // TODO: add spatial-joins markdown file
 - Bring datasets together
 - Joins
 - Aggregation
@@ -26,7 +25,7 @@
 
 ##### Section 3: Leaflet Draw
 - Plugin introduction
-- [Lab 2](lab/lab2
+- [Lab 2](lab/lab2)
 
 ## Homework Assignment (Due: Sunday, March 27)
 
