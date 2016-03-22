@@ -1,7 +1,12 @@
 /* =====================
   Global Variables
 ===================== */
-var rawData;  // for holding data
+var crimeData;
+var crimeFilters;
+var hexGrid;
+var mappedGrid;
+
+var baseHexStyle = { stroke: false }
 
 /* =====================
   Map Setup
@@ -22,3 +27,65 @@ var tileOpts = {
   ext: 'png'
 };
 var Stamen_TonerLite = L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.{ext}', tileOpts).addTo(map);
+
+
+$.ajax('https://raw.githubusercontent.com/CPLN690-MUSA610/datasets/master/geojson/philadelphia-crime-points.geojson').done(function(data) {
+  crimeData = JSON.parse(data);
+  // Fixing an AWFUL bug caused by BAD data: Features *NEED* to have geometries...
+  crimeData.features = _.filter(crimeData.features, function(f) { return f.geometry; });
+
+  // Fit map to data bounds
+  var mapBoundary = L.geoJson(turf.envelope(crimeData)).getBounds();
+  map.fitBounds(mapBoundary);
+
+  // We'll place a hexagonal grid over the entire map area (hexagons are better than
+  // squares because square east/west and north/south distance is less than diagonal distance
+  var turfFriendlyBoundary = [mapBoundary.getWest(), mapBoundary.getSouth(), mapBoundary.getEast(), mapBoundary.getNorth()];
+  hexGrid = turf.hexGrid(turfFriendlyBoundary, 0.25, 'miles');
+
+  // Update the HTML DOM to reflect all the unique crime types
+  // First, get the unique crime text
+  var uniqueCrimeTypes = _.unique(_.map(crimeData.features, function(f) { return f.properties.text_general_code; }));
+
+  // For each unique text, create a  checkbox
+  _.each(uniqueCrimeTypes, function(crimeText, index) {
+    $('#checkboxes').append('<label><input type="checkbox" />' + crimeText + '</label></br>');
+  });
+
+  $('#doFilter').click(function() {
+    // Here, we're using jQuery's `map` function; it works very much like underscore's
+    // We want true if checked, false if not
+    var checkboxValues = $('input[type=checkbox]').map(function(_, element) {
+          return $(element).prop('checked');
+    }).get();
+
+    // Let's "zip" checkbox values and checkbox text up together so that we can see values next to text
+    var zippedCrimeTypes = _.zip(checkboxValues, uniqueCrimeTypes);
+
+    // Our data, at this point, looks like this: [[true, 'aCrimeType], [false, 'unwantedCrimeType']]
+    // Now, we want to return all and only crime types whose "zipped" values are true
+    // This involves filtering for true values at index 0 and getting the text at index 1
+    crimeFilters = _.chain(zippedCrimeTypes)
+      .filter(function(zip) { return zip[0]; })
+      .map(function(zip) { return zip[1]; })
+      .value();
+
+    // Carry out filter
+    var filteredCrimeData = _.clone(crimeData);
+    filteredCrimeData.features = _.filter(filteredCrimeData.features, function(f) {
+      return _.contains(crimeFilters, f.properties.text_general_code);
+    });
+
+    if (mappedGrid) { map.removeLayer(mappedGrid); }
+    mappedGrid = L.geoJson(turf.count(hexGrid, filteredCrimeData, 'captured'), {
+      style: function(feature) {
+        return {
+          stroke: false,
+          fillColor: '#ff0000',
+          fillOpacity: (feature.properties.captured * 0.1)
+        };
+      }
+    }).addTo(map);
+  });
+});
+
