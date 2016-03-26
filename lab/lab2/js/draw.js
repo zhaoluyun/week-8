@@ -94,6 +94,18 @@ map.on('draw:created', function (e) {
     var layer = e.layer; // The Leaflet layer for the shape
     var id = L.stamp(layer); // The unique Leaflet ID for the layer
 
+var drawLayer = [];
+
+drawLayer.push(layer);
+var template = '<div class = "shape" id= "shape-'+id+'" data-id = "'+id+'"> <h1> shape'+id+'</h1> <h2> Type: '+type+'</h2> </div>';
+console.log(template);
+$('#shapes').append(template);
+map.addLayer(layer);
+$('[data-id = "'+id+'"]').on('click',function(){
+  var clickId = $ (this).data('id');
+  map.removeLayer(_.findWhere(drawLayer, {_leaflet_id:clickId}));
+  $('[data-id="'+clickId+'"]').remove();
+});
 
 
 });
